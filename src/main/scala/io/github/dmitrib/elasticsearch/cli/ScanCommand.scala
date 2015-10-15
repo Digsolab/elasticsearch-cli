@@ -117,7 +117,7 @@ object ScanCommand extends ScanCommandParams with Runnable {
     val (it, total) = EsUtil.scan(client, reqBuilder, retryMax, requestTimeoutMins)
     System.err.println(s"total hits: $total")
     it.flatMap(_.getHits.getHits).zip(Stream.from(1).iterator).foreach { case (hit, count) =>
-      if (count % (total/100) == 0) {
+      if (total >= 100 && count % (total/100) == 0) {
         System.err.println(s"${count/(total/100)}%")
       }
       println(hitToString(hit.getId, hit.getSourceAsString, srcOnly, srcIdTsv))
