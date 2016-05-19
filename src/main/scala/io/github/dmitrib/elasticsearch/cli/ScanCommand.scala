@@ -2,12 +2,13 @@ package io.github.dmitrib.elasticsearch.cli
 
 import com.beust.jcommander.{Parameter, Parameters}
 import java.util
-import org.elasticsearch.index.query.{QueryBuilder, FilterBuilders, QueryBuilders}
+import org.elasticsearch.index.query.{QueryBuilder, QueryBuilders}
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.common.unit.TimeValue
 import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 import io.github.dmitrib.elasticsearch.cli.EsTool._
+import org.elasticsearch.script.Script
 
 trait ScanCommandParams extends {
   @Parameter(names = Array("--query"), description = "Search query in Lucene syntax")
@@ -15,11 +16,12 @@ trait ScanCommandParams extends {
 
   def queryBuilder = {
     val q: QueryBuilder = Option(query)
-      .map(QueryBuilders.queryString)
+      .map(QueryBuilders.queryStringQuery)
       .getOrElse(QueryBuilders.matchAllQuery())
 
     Option(scriptFilter).fold(q) { script =>
-      QueryBuilders.filteredQuery(q, FilterBuilders.scriptFilter(script))
+
+      QueryBuilders.filteredQuery(q, QueryBuilders.scriptQuery(new Script(script)))
     }
   }
 

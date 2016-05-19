@@ -9,7 +9,7 @@ import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchRequestBuilder, SearchRequest, SearchResponse}
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException
-import org.elasticsearch.index.query.{QueryBuilder, FilterBuilders, QueryBuilders}
+import org.elasticsearch.index.query.{QueryBuilder, QueryBuilders}
 import org.elasticsearch.search.SearchHits
 import scala.collection.JavaConverters._
 
@@ -68,7 +68,7 @@ class SearchByInputCommand extends Runnable {
     batch.foreach { attr => qb.should(QueryBuilders.termQuery(searchField, attr)) }
 
     Option(queryString).map { qs =>
-      QueryBuilders.filteredQuery(qb, FilterBuilders.queryFilter(QueryBuilders.queryString(queryString)))
+      QueryBuilders.filteredQuery(qb, QueryBuilders.queryStringQuery(queryString))
     }.getOrElse(qb)
   }
 

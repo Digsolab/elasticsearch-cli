@@ -1,11 +1,13 @@
 package io.github.dmitrib.elasticsearch.cli
 
+import java.net.InetSocketAddress
+
 import com.beust.jcommander.{ParameterException, JCommander, Parameter}
 import java.util
 
 import scala.collection.JavaConverters._
-import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.client.transport.TransportClient
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.transport.InetSocketTransportAddress
 import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model.{Filter, DescribeInstancesRequest}
@@ -67,7 +69,7 @@ object EsTool {
   var help: Boolean = _
 
   lazy val client = {
-    val settings = ImmutableSettings.settingsBuilder
+    val settings = Settings.builder()
       .put("client.transport.ignore_cluster_name", true)
       .put("client.transport.sniff", nodeSniff)
       .put("client.transport.ping_timeout", s"${pingTimeoutSec}s")
@@ -76,21 +78,21 @@ object EsTool {
     val discoveredEndpoints = Option(ec2tag).map(_.split(":")).collect {
       case Array(name, value) => discoverEc2Endpoints(name, value)
     }.getOrElse(Seq.empty[String]).map { host =>
-      new InetSocketTransportAddress(host, ec2nodePort)
+      new InetSocketTransportAddress(new InetSocketAddress(host, ec2nodePort))
     }
 
     val providedEndpoints = endpoints.asScala.map(_.split(":")).map {
       case Array(host, port) =>
-        new InetSocketTransportAddress(host, port.toInt)
+        new InetSocketTransportAddress(new InetSocketAddress(host, port.toInt))
       case Array(host) =>
-        new InetSocketTransportAddress(host, 9300)
+        new InetSocketTransportAddress(new InetSocketAddress(host, 9300))
     }
 
     if (discoveredEndpoints.isEmpty && providedEndpoints.isEmpty) {
       throw new ParameterException("no provided endpoints and can't discover EC2 endpoints")
     }
 
-    val client = new TransportClient(settings)
+    val client = TransportClient.builder().settings(settings).build()
     discoveredEndpoints.foreach(client.addTransportAddress)
     providedEndpoints.foreach(client.addTransportAddress)
 
